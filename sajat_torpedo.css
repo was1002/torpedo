@@ -1,0 +1,78 @@
+/* general styles */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    font-family: 'Century gothic';
+    cursor: default;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+body {
+    background-color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-size: 5vmin;
+    text-align: center;
+}
+
+/* game elements */
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+    grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+    background-color: #222;
+    gap: var(--cell-gap);
+    border-radius: 0.1vmin;
+    padding: var(--cell-gap);
+    position: relative;
+}
+
+.cell{
+    background-color: var(--cell-color);
+    background-size: contain;
+    border-radius: 0.1vmin;
+    align-content: center;
+}
+
+.sunkenCell{
+    background-color: #444;
+}
+
+/* buttons */
+
+#tools{
+    display: flex;
+    flex-wrap: wrap;
+    width: 10vh;
+    left: 3vh;
+    position: relative;
+}
+
+.tool{
+    height: 8vh;
+    width: 8vh;
+    margin: 1vh;
+    padding: 1vh;
+    background-color: #AAA;
+    border-radius: 0.8vh;
+}
+
+.tool:hover, .cellHover:hover{
+    filter: brightness(75%);
+}
+
+.tool:active{
+    background-color: #444;
+    border: solid red 0.7vh;
+}
+
+.selectedTool{
+    background-color: #555;
+    border: solid red 0.5vh;
+}
