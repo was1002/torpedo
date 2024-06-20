@@ -1,5 +1,7 @@
 import Grid from "./grid.js"
 
+let MAX_SHIP_LENGTH = 4
+
 //creating gameboard
 const gameBoard = document.getElementById("game-board")
 //creating grid with cells
@@ -177,6 +179,7 @@ function setNewGame(){
     lastState = "free"
     lastCellIds = [0]
     discoveredShips = []
+    shipLength = []
     for(let i=0; i<grid.size*grid.size;i++){
         grid.cell(i).state = "free"
     }
@@ -206,6 +209,7 @@ let numShip4 = 1
 
 let discoveredShips = []
 let discoveredShipsHistory = []
+let shipLength = []
 
 function calculateCellValues(){
 
@@ -258,15 +262,20 @@ function addCellToShip(cell){
     mergeNeighbourShips(cellsOfShip, shipIndex)
     console.log("discoveredShips:")
     console.log(discoveredShips)
+
+    updateShipLength()
 }
 
 function setPreviousShipData(){
+    // reset to the previous state of the ships
     discoveredShips = discoveredShipsHistory.map((ship) => ship.slice())
     console.log("discoveredShips:")
     console.log(discoveredShips)
+    updateShipLength()
 }
 
 function searchShipByCell(shipCell){
+    // returns the index of the ship or -1 if the cell is not in a ship
     return discoveredShips.findIndex((ship) => isCellInShip(ship,shipCell))
 }
 
@@ -298,23 +307,42 @@ function getFreeNeighboursOfShip(shipCells){
 }
 
 function mergeNeighbourShips(cellsOfShip, shipIndex){
+    // collecting x and y values for a bounding box
     let shipNeighbourMinMax = {
         Xmin: Math.max(Math.min(...cellsOfShip.map(cell => cell.x)) - 1, 0),
         Xmax: Math.min(Math.max(...cellsOfShip.map(cell => cell.x)) + 1, 9),
         Ymin: Math.max(Math.min(...cellsOfShip.map(cell => cell.y)) - 1, 0),
         Ymax: Math.min(Math.max(...cellsOfShip.map(cell => cell.y)) + 1, 9)
     }
+    // iterating through every cell in the bounding box, and merging ships if connected
     for(let i = shipNeighbourMinMax.Xmin; i<=shipNeighbourMinMax.Xmax; i++ ){
         for(let j = shipNeighbourMinMax.Ymin; j<=shipNeighbourMinMax.Ymax; j++){
             let neighbourCell = grid.cellByXY(i,j)
+            // if the cell is in a ship but not in this ship
             if(neighbourCell.state == "hit" && !isCellInShip(discoveredShips[shipIndex],neighbourCell)){
                 let neighbourShipIndex = searchShipByCell(neighbourCell)
                 console.log(neighbourShipIndex)
+                // adding one of the ships to the other
                 for(let id of discoveredShips[neighbourShipIndex]){
                     discoveredShips[shipIndex].push(id)
                 }
+                // deleting the neighbour ship
                 discoveredShips.splice(neighbourShipIndex,1)
             }
         }
     }
+}
+
+function updateShipLength(){
+    // deleting current ship length data
+    shipLength = []
+    // calculating the length of every ship
+    for(let i=0; i<discoveredShips.length; i++){
+        shipLength[i] = discoveredShips[i].length
+        if(shipLength[i] > MAX_SHIP_LENGTH){
+            console.error("Error: The length of a ship is bigger (" + shipLength[i] + ") than the maximum (" + MAX_SHIP_LENGTH + ")")
+        }
+    }
+    console.log("shipLength:")
+    console.log(shipLength)
 }
