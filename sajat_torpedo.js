@@ -1,6 +1,5 @@
 import Grid from "./grid.js"
-
-let MAX_SHIP_LENGTH = 4
+import Fleet from "./fleet.js"
 
 //creating gameboard
 const gameBoard = document.getElementById("game-board")
@@ -202,10 +201,11 @@ function resetButtons(){
 -------------- Algorithm Section ----------------------------------
 */
 
-let numShip1 = 4
-let numShip2 = 3
-let numShip3 = 2
-let numShip4 = 1
+let allowedShipCount = [4,3,2,1] // number of allowed ships with length index+1
+let maxShipLength = allowedShipCount.length // longest allowed shiplength
+
+let undiscoveredShipCount = [4,3,2,1] // number of undiscovered ships with length index+1
+let maxUndiscoveredShipLength = undiscoveredShipCount.length
 
 let discoveredShips = []
 let discoveredShipsHistory = []
@@ -225,7 +225,7 @@ function getShipCellsBasedOnCell(shipCell){
 }
 
 function addCellToShip(cell){
-    // saving current ship data
+    // saving current ship data into a temporary variable
     discoveredShipsHistory = discoveredShips.map((ship) => ship.slice())
     console.log("history: ")
     console.log(discoveredShipsHistory)
@@ -264,6 +264,7 @@ function addCellToShip(cell){
     console.log(discoveredShips)
 
     updateShipLength()
+    
 }
 
 function setPreviousShipData(){
@@ -333,14 +334,15 @@ function mergeNeighbourShips(cellsOfShip, shipIndex){
     }
 }
 
+// updates the length of the ships, if there is a ship which is bigger than allowed, returns -1, otherwise returns 0
 function updateShipLength(){
     // deleting current ship length data
     shipLength = []
     // calculating the length of every ship
     for(let i=0; i<discoveredShips.length; i++){
         shipLength[i] = discoveredShips[i].length
-        if(shipLength[i] > MAX_SHIP_LENGTH){
-            console.error("Error: The length of a ship is bigger (" + shipLength[i] + ") than the maximum (" + MAX_SHIP_LENGTH + ")")
+        if(shipLength[i] > maxShipLength){
+            console.error("Error: The length of a ship is bigger (" + shipLength[i] + ") than the maximum (" + maxShipLength + ")")
         }
     }
     console.log("shipLength:")
