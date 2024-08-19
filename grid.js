@@ -28,12 +28,12 @@ export default class Grid {
 
     // get cells that are free to shoot at
     get freeCells(){
-        return this.#cells.filter(cell => cell.state == "free")
+        return this.#cells.filter((cell) => cell.state == "free")
     }
 
     // get cells that cannot be shot at
     get inactiveCells(){
-        return this.#cells.filter(cell => (cell.state == "miss") || (cell.state == "hit"))
+        return this.#cells.filter((cell) => (cell.state == "miss") || (cell.state == "hit"))
     }
 
     cell(id){

@@ -42,9 +42,10 @@ function setupInput() {
 // event handler for clicks on cells
 async function onClickOnCell(element) {
     let clickedElement = element.originalTarget
-    // setting the new state of the cell
+    // if clicked on a cell
     if(clickedElement.classList[0] == "cell"){
         let cell = getClickedCell(clickedElement.id)
+        // setting the new state of the cell
         let tmp_state = cell.state
         if(tmp_state == "free" ){
             lastCellIds = []
@@ -81,12 +82,14 @@ async function onClickOnCell(element) {
                     // setting the cell into a hit first to get the hit look
                     cell.state = "hit"
                     // adding cell to a ship
-                    addCellToShip(cell)
+                    let ship = addCellToShip(cell)
                     // setting the cells of the ship to "sunk"
-                    let shipCells = getShipCellsBasedOnCell(cell)
+                    let shipCells = ship.cells
                     for(let element of shipCells){
                         element.state = selectedState
                     }
+                    // setting the ship state to "sunken"
+                    ship.isSunken = true
                     // setting the side and corner neighbour cells to a miss
                     // and adding the clicked cell and the misses to lastCellIds
                     lastCellIds[0] = clickedElement.id
@@ -95,14 +98,14 @@ async function onClickOnCell(element) {
                         element.state = "miss"
                         lastCellIds.push(element.id)
                     }
+                    console.log("Ship:")
+                    console.log(ship)
                     break
             }
             console.log("lefutottam")
             lastState = tmp_state
             console.log("lastCellIds: " + lastCellIds)
         }
-    }
-    for(var i=0;i<grid.size*grid.size;i++){
     }
     // calculating the new cell values
     calculateCellValues()
@@ -177,7 +180,7 @@ function setUndo(){
 function setNewGame(){
     lastState = "free"
     lastCellIds = [0]
-    discoveredShips = []
+    // discoveredShips = []
     shipLength = []
     for(let i=0; i<grid.size*grid.size;i++){
         grid.cell(i).state = "free"
@@ -201,15 +204,15 @@ function resetButtons(){
 -------------- Algorithm Section ----------------------------------
 */
 
-let allowedShipCount = [4,3,2,1] // number of allowed ships with length index+1
+/* let allowedShipCount = [4,3,2,1] // number of allowed ships with length index+1
 let maxShipLength = allowedShipCount.length // longest allowed shiplength
 
 let undiscoveredShipCount = [4,3,2,1] // number of undiscovered ships with length index+1
-let maxUndiscoveredShipLength = undiscoveredShipCount.length
+let maxUndiscoveredShipLength = undiscoveredShipCount.length */
 
-let discoveredShips = []
-let discoveredShipsHistory = []
-let shipLength = []
+let fleet = new Fleet()
+/* let discoveredShipsHistory = []
+let shipLength = [] */
 
 function calculateCellValues(){
 
@@ -226,45 +229,59 @@ function getShipCellsBasedOnCell(shipCell){
 
 function addCellToShip(cell){
     // saving current ship data into a temporary variable
-    discoveredShipsHistory = discoveredShips.map((ship) => ship.slice())
-    console.log("history: ")
-    console.log(discoveredShipsHistory)
-    // getting neighbours that are "hit"
-    let hitNeighbours = []
-    if(cell.x-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y).state == "hit"){
-        hitNeighbours.push(grid.cellByXY(cell.x - 1, cell.y))
-    }
-    if(cell.x+1 < 10 && grid.cellByXY(cell.x + 1, cell.y).state == "hit"){
-        hitNeighbours.push(grid.cellByXY(cell.x + 1, cell.y))
-    }
-    if(cell.y-1 >= 0 && grid.cellByXY(cell.x, cell.y - 1).state == "hit"){
-        hitNeighbours.push(grid.cellByXY(cell.x, cell.y - 1))
-    }
-    if(cell.y+1 < 10 && grid.cellByXY(cell.x, cell.y + 1).state == "hit"){
-        hitNeighbours.push(grid.cellByXY(cell.x, cell.y + 1))
-    }
-    // searching ships to add the new cell
-    let shipIndex = -1
-    for(let element of hitNeighbours){
-        shipIndex = searchShipByCell(element)
-        if(shipIndex > -1){
-            discoveredShips[shipIndex].push(cell.id)
-            break
-        }
-    }
-    //if no neighbour ships, then create a new
-    if(shipIndex == -1){
-        discoveredShips.push([cell.id])
-    }
-    // merge ships if they are neighbours
-    shipIndex = searchShipByCell(cell)
-    let cellsOfShip = getShipCellsBasedOnCell(cell)
-    mergeNeighbourShips(cellsOfShip, shipIndex)
-    console.log("discoveredShips:")
-    console.log(discoveredShips)
+//    discoveredShipsHistory = discoveredShips.map((ship) => ship.slice())
 
-    updateShipLength()
-    
+    let ship
+    let ship2
+    let neighbourCells = []
+    let neighbourHitCount = 0
+    // searching through neighbour cells if they are in a ship,
+    // if so, the cell can be added to that
+    // checking if top cell is a hit
+    if(cell.x-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x - 1, cell.y))
+        neighbourHitCount += 1
+    }
+    // checking if bottom cell is a hit
+    if(cell.x+1 < 10 && grid.cellByXY(cell.x + 1, cell.y).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x + 1, cell.y))
+        neighbourHitCount += 1
+    }
+    // checking if left cell is a hit
+    if(cell.y-1 >= 0 && grid.cellByXY(cell.x, cell.y - 1).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x, cell.y - 1))
+        neighbourHitCount += 1
+    }
+    // checking if right cell is a hit
+    if(cell.y+1 < 10 && grid.cellByXY(cell.x, cell.y + 1).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x, cell.y + 1))
+        neighbourHitCount += 1
+    }
+    // check how many hit neighbours the cell has
+    switch(neighbourHitCount){
+        case 0: // if there are no neighbour ships, then create a new
+            ship = fleet.newShip()
+            break
+        case 1: // search the ship that belongs to the neighbour
+            ship = searchShipByCell(neighbourCells[0])
+            break
+        case 2: // search the two neighbour ships
+            ship = searchShipByCell(neighbourCells[0])
+            ship2 = searchShipByCell(neighbourCells[1])
+            break
+        default:
+            console.error("Error: There are too many neighbour ships of cell: " + cell.id)
+    }
+    // check if ship length isn't bigger than allowed
+    // add cell to the selected ship
+    ship.addCell(cell)
+
+    // merge ships if there are neighbours
+    // check if ship.length + ship2.length isn't greater than the max allowed length
+    if(neighbourHitCount == 2){
+        ship = fleet.mergeShips(ship, ship2)
+    }
+    return ship
 }
 
 function setPreviousShipData(){
@@ -272,16 +289,11 @@ function setPreviousShipData(){
     discoveredShips = discoveredShipsHistory.map((ship) => ship.slice())
     console.log("discoveredShips:")
     console.log(discoveredShips)
-    updateShipLength()
 }
 
 function searchShipByCell(shipCell){
-    // returns the index of the ship or -1 if the cell is not in a ship
-    return discoveredShips.findIndex((ship) => isCellInShip(ship,shipCell))
-}
-
-function isCellInShip(ship,cell){
-    return ship.indexOf(cell.id) > -1
+    // returns the ship or undefined if the cell is not in a ship
+    return fleet.ships.find((ship) => ship.isCellInShip(shipCell))
 }
 
 function getFreeNeighboursOfShip(shipCells){
@@ -305,46 +317,4 @@ function getFreeNeighboursOfShip(shipCells){
     }
     console.log(freeCells)
     return freeCells
-}
-
-function mergeNeighbourShips(cellsOfShip, shipIndex){
-    // collecting x and y values for a bounding box
-    let shipNeighbourMinMax = {
-        Xmin: Math.max(Math.min(...cellsOfShip.map(cell => cell.x)) - 1, 0),
-        Xmax: Math.min(Math.max(...cellsOfShip.map(cell => cell.x)) + 1, 9),
-        Ymin: Math.max(Math.min(...cellsOfShip.map(cell => cell.y)) - 1, 0),
-        Ymax: Math.min(Math.max(...cellsOfShip.map(cell => cell.y)) + 1, 9)
-    }
-    // iterating through every cell in the bounding box, and merging ships if connected
-    for(let i = shipNeighbourMinMax.Xmin; i<=shipNeighbourMinMax.Xmax; i++ ){
-        for(let j = shipNeighbourMinMax.Ymin; j<=shipNeighbourMinMax.Ymax; j++){
-            let neighbourCell = grid.cellByXY(i,j)
-            // if the cell is in a ship but not in this ship
-            if(neighbourCell.state == "hit" && !isCellInShip(discoveredShips[shipIndex],neighbourCell)){
-                let neighbourShipIndex = searchShipByCell(neighbourCell)
-                console.log(neighbourShipIndex)
-                // adding one of the ships to the other
-                for(let id of discoveredShips[neighbourShipIndex]){
-                    discoveredShips[shipIndex].push(id)
-                }
-                // deleting the neighbour ship
-                discoveredShips.splice(neighbourShipIndex,1)
-            }
-        }
-    }
-}
-
-// updates the length of the ships, if there is a ship which is bigger than allowed, returns -1, otherwise returns 0
-function updateShipLength(){
-    // deleting current ship length data
-    shipLength = []
-    // calculating the length of every ship
-    for(let i=0; i<discoveredShips.length; i++){
-        shipLength[i] = discoveredShips[i].length
-        if(shipLength[i] > maxShipLength){
-            console.error("Error: The length of a ship is bigger (" + shipLength[i] + ") than the maximum (" + maxShipLength + ")")
-        }
-    }
-    console.log("shipLength:")
-    console.log(shipLength)
 }
