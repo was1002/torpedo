@@ -62,10 +62,10 @@ export class Cell{
         this.#state = state
         this.#id = id
     }
-    // the state of a cell can be free, miss, sunk or hit
+    // the state of a cell can be free, miss, sunken or hit
     set state(value){
-        if(value == "free" || value == "miss" || value == "hit" || value == "sunk"){
-            if(this.#state == "free" || value == "free" || (value == "sunk" && this.#state == "hit") || (value == "hit" && this.#state == "sunk")){ //to not overwrite occupied cells, but be able to undo them
+        if(value == "free" || value == "miss" || value == "hit" || value == "sunken"){
+            if(this.#state == "free" || value == "free" || (value == "sunken" && this.#state == "hit") || (value == "hit" && this.#state == "sunken")){ //to not overwrite occupied cells, but be able to undo them
                 this.#state = value
                 setCellApperance(this.#cellElement, value)
             }
@@ -121,7 +121,7 @@ function setCellApperance(cell, state){
             cell.classList.remove("cellHover")
             cell.classList.remove("sunkenCell")
             break
-        case "sunk":
+        case "sunken":
             cell.classList.add("sunkenCell")
             break
         case "free":

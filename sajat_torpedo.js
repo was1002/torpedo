@@ -10,7 +10,7 @@ const grid = new Grid(gameBoard)
     // getting button elements
 const missButton = document.getElementById("miss")
 const hitButton = document.getElementById("hit")
-const sunkButton = document.getElementById("sunk")
+const sunkButton = document.getElementById("sunken")
 const undoButton = document.getElementById("undo")
 const newGameButton = document.getElementById("newGame")
     // setting button functionalities
@@ -24,7 +24,6 @@ let selectedState = "miss"
 setButtonStyle(missButton)
 
 // initializing cell "history"
-let lastState = "free"
 let lastCellIds = [0]
 
 //handling clicks on cells
@@ -46,19 +45,26 @@ async function onClickOnCell(element) {
     if(clickedElement.classList[0] == "cell"){
         let cell = getClickedCell(clickedElement.id)
         // setting the new state of the cell
-        let tmp_state = cell.state
-        if(tmp_state == "free" ){
-            lastCellIds = []
+        if(cell.state == "free" ){
             switch(selectedState){
                 case "miss":
                     cell.state = selectedState
+                    lastCellIds = []
                     lastCellIds[0] = clickedElement.id
                     break
                 case "hit":
                     cell.state = selectedState
                     // adding cell to a ship
-                    addCellToShip(cell)
+                    let isCelladded = addCellToShip(cell)
+                    // checking if cell added properly
+                    if(isCelladded == -1){
+                        // there was an error
+                        // setting everything back
+                        cell.state = "free"
+                        return
+                    }
                     //adding cell to cell history
+                    lastCellIds = []
                     lastCellIds[0] = clickedElement.id
                     // turn corner neighbour cells into a miss, because they can't be in a ship
                     if(cell.x-1 >= 0 && cell.y-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y - 1).state == "free"){
@@ -78,12 +84,12 @@ async function onClickOnCell(element) {
                         lastCellIds.push(grid.cellByXY(cell.x + 1, cell.y + 1).id)
                     }
                     break
-                case "sunk":
+                case "sunken":
                     // setting the cell into a hit first to get the hit look
                     cell.state = "hit"
                     // adding cell to a ship
                     let ship = addCellToShip(cell)
-                    // setting the cells of the ship to "sunk"
+                    // setting the cells of the ship to "sunken"
                     let shipCells = ship.cells
                     for(let element of shipCells){
                         element.state = selectedState
@@ -92,6 +98,7 @@ async function onClickOnCell(element) {
                     ship.isSunken = true
                     // setting the side and corner neighbour cells to a miss
                     // and adding the clicked cell and the misses to lastCellIds
+                    lastCellIds = []
                     lastCellIds[0] = clickedElement.id
                     let freeNeighbourCells = getFreeNeighboursOfShip(shipCells)
                     for(let element of freeNeighbourCells){
@@ -103,7 +110,6 @@ async function onClickOnCell(element) {
                     break
             }
             console.log("lefutottam")
-            lastState = tmp_state
             console.log("lastCellIds: " + lastCellIds)
         }
     }
@@ -135,17 +141,42 @@ function setHit(){
     selectedState = "hit"
 }
 
-// "sunk" button onclick function
+// "sunken" button onclick function
 function setSunk(){
     resetButtons()
     setButtonStyle(sunkButton)
-    selectedState = "sunk"
+    selectedState = "sunken"
 }
 
 // "undo" button onclick function
 function setUndo(){
+    // get last clicked cell and the ship that it's in
     let lastCell = grid.cell(lastCellIds[0])
-    switch(lastCell.state){
+    let lastShip = searchShipByCell(lastCell)
+    // if the ship is sunken that means it sunk with the last cell
+    if(lastShip != undefined && lastShip.isSunken == true){
+        // set to not sunken
+        lastShip.isSunken = false
+        // set the cells to hit instead of sunken
+        for(let shipCell of lastShip.cells){
+            shipCell.state = "hit"
+        }
+    }
+    // set all last occupied cells to free
+    for(let i of lastCellIds){
+        grid.cell(i).state = "free"
+    }
+    // checking if there is a modified ship (= last cell not a miss)
+    if(lastShip != undefined){
+        // check if the ship needs to be deleted
+        if(lastShip.length == 1){
+            fleet.removeShip(lastShip)
+        } else {
+            // are there cells with ID both smaller and greater
+            // than the last added cell's
+        }
+    }
+/*    switch(lastCell.state){
         case "miss":
             lastCell.state = "free"
             break
@@ -157,7 +188,7 @@ function setUndo(){
                 grid.cell(i).state = "free"
             }
             break
-        case "sunk":
+        case "sunken":
             //getting ship cells
             let shipCells = getShipCellsBasedOnCell(lastCell)
             //setting ship cells to hit
@@ -172,13 +203,12 @@ function setUndo(){
             // set back previous ship data
             setPreviousShipData()
             break
-    }
+    } */
     calculateCellValues()
 }
 
 // "newGame" button onclick function
 function setNewGame(){
-    lastState = "free"
     lastCellIds = [0]
     // discoveredShips = []
     shipLength = []
@@ -211,8 +241,6 @@ let undiscoveredShipCount = [4,3,2,1] // number of undiscovered ships with lengt
 let maxUndiscoveredShipLength = undiscoveredShipCount.length */
 
 let fleet = new Fleet()
-/* let discoveredShipsHistory = []
-let shipLength = [] */
 
 function calculateCellValues(){
 
@@ -227,11 +255,10 @@ function getShipCellsBasedOnCell(shipCell){
     return cellsOfShip
 }
 
+// adds a new cell to a neighbour ship, or if there isn't any, creates a new one
+// returns the ship, or -1 if there is an error
 function addCellToShip(cell){
-    // saving current ship data into a temporary variable
-//    discoveredShipsHistory = discoveredShips.map((ship) => ship.slice())
-
-    let ship
+    let ship1
     let ship2
     let neighbourCells = []
     let neighbourHitCount = 0
@@ -260,28 +287,30 @@ function addCellToShip(cell){
     // check how many hit neighbours the cell has
     switch(neighbourHitCount){
         case 0: // if there are no neighbour ships, then create a new
-            ship = fleet.newShip()
+            ship1 = fleet.newShip()
             break
         case 1: // search the ship that belongs to the neighbour
-            ship = searchShipByCell(neighbourCells[0])
+            ship1 = searchShipByCell(neighbourCells[0])
             break
         case 2: // search the two neighbour ships
-            ship = searchShipByCell(neighbourCells[0])
+            ship1 = searchShipByCell(neighbourCells[0])
             ship2 = searchShipByCell(neighbourCells[1])
             break
         default:
             console.error("Error: There are too many neighbour ships of cell: " + cell.id)
+            return -1
     }
     // check if ship length isn't bigger than allowed
     // add cell to the selected ship
-    ship.addCell(cell)
+    ship1.addCell(cell)
 
     // merge ships if there are neighbours
-    // check if ship.length + ship2.length isn't greater than the max allowed length
+    // check if ship1.length + ship2.length isn't greater than the max allowed length
     if(neighbourHitCount == 2){
-        ship = fleet.mergeShips(ship, ship2)
+        ship1 = fleet.mergeShips(ship1, ship2)
     }
-    return ship
+
+    return ship1
 }
 
 function setPreviousShipData(){
@@ -298,23 +327,25 @@ function searchShipByCell(shipCell){
 
 function getFreeNeighboursOfShip(shipCells){
     // calculating the cell coordinate bounds of the neighbours
-    let shipNeighbourMinMax = {
+    let boundingBox = {
         Xmin: Math.max(Math.min(...shipCells.map(cell => cell.x)) - 1, 0),
         Xmax: Math.min(Math.max(...shipCells.map(cell => cell.x)) + 1, 9),
         Ymin: Math.max(Math.min(...shipCells.map(cell => cell.y)) - 1, 0),
         Ymax: Math.min(Math.max(...shipCells.map(cell => cell.y)) + 1, 9)
     }
-    console.log(shipNeighbourMinMax)
+    console.log("Bounding box:")
+    console.log(boundingBox)
     // collecting free cells in bounding box
     let freeCells = []
-    for(let i = shipNeighbourMinMax.Xmin; i<=shipNeighbourMinMax.Xmax; i++ ){
-        for(let j = shipNeighbourMinMax.Ymin; j<=shipNeighbourMinMax.Ymax; j++){
+    for(let i = boundingBox.Xmin; i<=boundingBox.Xmax; i++ ){
+        for(let j = boundingBox.Ymin; j<=boundingBox.Ymax; j++){
             let neighbourCell = grid.cellByXY(i,j)
             if(neighbourCell.state == "free"){
                 freeCells.push(neighbourCell)
             }
         }
     }
+    console.log("Free cells:")
     console.log(freeCells)
     return freeCells
 }

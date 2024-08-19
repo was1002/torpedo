@@ -23,9 +23,6 @@ export default class Fleet {
         // creating a new id for a next ship
         this.#nextId += 1
         // returning the newly created ship
-        console.log("hajók: ")
-        console.log(this.#ships)
-        console.log(this.#ships[this.#shipCount - 1])
         return this.#ships[this.#shipCount - 1]
     }
 
