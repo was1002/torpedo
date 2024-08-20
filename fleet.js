@@ -17,6 +17,7 @@ export default class Fleet {
         return this.#shipCount
     }
 
+    // creates a new ship to the fleet and returns it
     newShip(){
         // adding a new ship to the fleet and updating the number of ships
         this.#shipCount = this.#ships.push(new Ship(this.#nextId))
@@ -26,6 +27,7 @@ export default class Fleet {
         return this.#ships[this.#shipCount - 1]
     }
 
+    // returns the ship based on its id
     ship(id){
         return this.#ships.find((element) => element.id == id)
     }
@@ -34,8 +36,10 @@ export default class Fleet {
     removeShip(ship){
         let index = this.#ships.indexOf(ship)
         this.#ships.splice(index, 1)
+        this.#shipCount -= 1
     }
 
+    // resets the fleet
     removeAllShips(){
         this.#ships = []
         this.#nextId = 0
@@ -53,6 +57,7 @@ export default class Fleet {
         return ship1
     }
     
+    // collects all the ships that are found but not sunken
     notSunkenShips(){
         return this.#ships.filter((ship) => !ship.isSunken)
     }
@@ -91,16 +96,18 @@ export class Ship {
         this.#isSunken = value
     }
 
+    // adds a cell to the ship
     addCell(cell){
         this.#cells.push(cell)
         this.#length += 1
     }
 
+    // removes the cell from the ship if it's a part of it
     removeCell(cell){
         // if the cell is part of the ship remove it and update length
         let cellPosition = this.#cells.indexOf(cell)
         if(cellPosition >= 0 ){
-            this.#cells = this.#cells.splice(cellPosition,1)
+            this.#cells.splice(cellPosition,1)
             this.#length -= 1
         // else throw an error
         } else {
@@ -108,6 +115,7 @@ export class Ship {
         }
     }
 
+    // decides whether the cell is in the ship or not, returns true or false
     isCellInShip(cell){
         return this.#cells.includes(cell)
     }

@@ -16,7 +16,12 @@ export default class Grid {
         gridElement.style.setProperty("--cell-gap", `${CELL_GAP}vmin`)
         // adding cells to the grid
         this.#cells = createCellElements(gridElement).map((cellElement, index) => {
-            return new Cell(cellElement, index % GRID_SIZE, Math.floor(index / GRID_SIZE), "free", index)
+            return new Cell(
+                cellElement,
+                index % GRID_SIZE,
+                Math.floor(index / GRID_SIZE),
+                "free",
+                index)
         })
         this.#size = GRID_SIZE
     }

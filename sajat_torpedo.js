@@ -55,9 +55,9 @@ async function onClickOnCell(element) {
                 case "hit":
                     cell.state = selectedState
                     // adding cell to a ship
-                    let isCelladded = addCellToShip(cell)
+                    let isCellAdded = addCellToShip(cell)
                     // checking if cell added properly
-                    if(isCelladded == -1){
+                    if(isCellAdded == -1){
                         // there was an error
                         // setting everything back
                         cell.state = "free"
@@ -111,6 +111,9 @@ async function onClickOnCell(element) {
             }
             console.log("lefutottam")
             console.log("lastCellIds: " + lastCellIds)
+
+            console.log("Fleet: ")
+            console.log(fleet)
         }
     }
     // calculating the new cell values
@@ -174,47 +177,36 @@ function setUndo(){
         } else {
             // are there cells with ID both smaller and greater
             // than the last added cell's
+            if(isMiddleCell(lastShip,lastCell)){
+                // unmerge the ships
+                let unmergedShip = fleet.newShip()
+                for(let cell of lastShip.cells){
+                    // if the cell id is bigger than the last cell's
+                    // add to a new ship and delete from this
+                    if(cell.id > lastCell.id){
+                        unmergedShip.addCell(cell)
+                        lastShip.removeCell(cell)
+                    }
+                }
+            }
+            // remove the last cell from the ship
+            lastShip.removeCell(lastCell)
         }
     }
-/*    switch(lastCell.state){
-        case "miss":
-            lastCell.state = "free"
-            break
-        case "hit":
-            // set back previous ship data
-            setPreviousShipData()
-            // set back previous states
-            for(let i of lastCellIds){
-                grid.cell(i).state = "free"
-            }
-            break
-        case "sunken":
-            //getting ship cells
-            let shipCells = getShipCellsBasedOnCell(lastCell)
-            //setting ship cells to hit
-            for(let i of shipCells){
-                i.state = "hit"
-                console.log(i)
-            }
-            //setting lastCellIds to free
-            for(let i of lastCellIds){
-                grid.cell(i).state = "free"
-            }
-            // set back previous ship data
-            setPreviousShipData()
-            break
-    } */
+
+    console.log("Fleet: ")
+    console.log(fleet)
+
     calculateCellValues()
 }
 
 // "newGame" button onclick function
 function setNewGame(){
     lastCellIds = [0]
-    // discoveredShips = []
-    shipLength = []
     for(let i=0; i<grid.size*grid.size;i++){
         grid.cell(i).state = "free"
     }
+    fleet.removeAllShips()
     calculateCellValues()
 }
 
@@ -244,15 +236,6 @@ let fleet = new Fleet()
 
 function calculateCellValues(){
 
-}
-
-function getShipCellsBasedOnCell(shipCell){
-    let shipIndex = searchShipByCell(shipCell)
-    let cellsOfShip = []
-    for(let id of discoveredShips[shipIndex]){
-        cellsOfShip.push(grid.cell(id))
-    }
-    return cellsOfShip
 }
 
 // adds a new cell to a neighbour ship, or if there isn't any, creates a new one
@@ -313,18 +296,12 @@ function addCellToShip(cell){
     return ship1
 }
 
-function setPreviousShipData(){
-    // reset to the previous state of the ships
-    discoveredShips = discoveredShipsHistory.map((ship) => ship.slice())
-    console.log("discoveredShips:")
-    console.log(discoveredShips)
-}
-
 function searchShipByCell(shipCell){
     // returns the ship or undefined if the cell is not in a ship
     return fleet.ships.find((ship) => ship.isCellInShip(shipCell))
 }
 
+// collects all of the neighbour and corner neighbour cells of a ship that are free
 function getFreeNeighboursOfShip(shipCells){
     // calculating the cell coordinate bounds of the neighbours
     let boundingBox = {
@@ -337,6 +314,7 @@ function getFreeNeighboursOfShip(shipCells){
     console.log(boundingBox)
     // collecting free cells in bounding box
     let freeCells = []
+    // searches the whole bounding box and adds the cell if it is free
     for(let i = boundingBox.Xmin; i<=boundingBox.Xmax; i++ ){
         for(let j = boundingBox.Ymin; j<=boundingBox.Ymax; j++){
             let neighbourCell = grid.cellByXY(i,j)
@@ -348,4 +326,22 @@ function getFreeNeighboursOfShip(shipCells){
     console.log("Free cells:")
     console.log(freeCells)
     return freeCells
+}
+
+// checks if the cell is a middle cell of the ship
+function isMiddleCell(ship, cell){
+    let smallerIdCount = 0
+    let biggerIdCount = 0
+
+    // collects the ids that are smaller and bigger than the id of the cell
+    for(let shipCell of ship.cells){
+        if(shipCell.id < cell.id){
+            smallerIdCount += 1
+        } else if(shipCell.id > cell.id){
+            biggerIdCount += 1
+        }
+
+    }
+    // if there are both smaller and bigger ids, the cell is a middle cell
+    return smallerIdCount > 0 && biggerIdCount > 0
 }
