@@ -4,7 +4,7 @@ const CELL_SIZE = 8
 const CELL_GAP = 0.5
 const CELL_COLOR = "#AAA"
 
-export default class Grid {
+class Grid {
     #cells
     #size
 
@@ -51,7 +51,7 @@ export default class Grid {
     
 }
 
-export class Cell{
+class Cell{
     #cellElement
     #x
     #y

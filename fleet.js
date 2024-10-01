@@ -1,4 +1,4 @@
-export default class Fleet {
+class Fleet {
     #ships
     #nextId
     #shipCount
@@ -63,7 +63,7 @@ export default class Fleet {
     }
 }
 
-export class Ship {
+class Ship {
     #id
     #length
     #cells
