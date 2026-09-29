@@ -48,7 +48,8 @@ function setUndo(){
             if(isMiddleCell(lastShip,lastCell)){
                 // unmerge the ships
                 let unmergedShip = fleet.newShip()
-                for(let cell of lastShip.cells){
+                let tempCells = [...lastShip.cells]
+                for(let cell of tempCells){
                     // if the cell id is bigger than the last cell's
                     // add to a new ship and delete from this
                     if(cell.id > lastCell.id){

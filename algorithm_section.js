@@ -17,28 +17,9 @@ function addCellToShip(cell){
     let ship2
     let neighbourCells = []
     let neighbourHitCount = 0
-    // searching through neighbour cells if they are in a ship,
-    // if so, the cell can be added to that
-    // checking if top cell is a hit
-    if(cell.x-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y).state == "hit"){
-        neighbourCells.push(grid.cellByXY(cell.x - 1, cell.y))
-        neighbourHitCount += 1
-    }
-    // checking if bottom cell is a hit
-    if(cell.x+1 < 10 && grid.cellByXY(cell.x + 1, cell.y).state == "hit"){
-        neighbourCells.push(grid.cellByXY(cell.x + 1, cell.y))
-        neighbourHitCount += 1
-    }
-    // checking if left cell is a hit
-    if(cell.y-1 >= 0 && grid.cellByXY(cell.x, cell.y - 1).state == "hit"){
-        neighbourCells.push(grid.cellByXY(cell.x, cell.y - 1))
-        neighbourHitCount += 1
-    }
-    // checking if right cell is a hit
-    if(cell.y+1 < 10 && grid.cellByXY(cell.x, cell.y + 1).state == "hit"){
-        neighbourCells.push(grid.cellByXY(cell.x, cell.y + 1))
-        neighbourHitCount += 1
-    }
+    
+    neighbourCells = collectNeighbourShipCells(cell)
+    neighbourHitCount = neighbourCells.length
     // check how many hit neighbours the cell has
     switch(neighbourHitCount){
         case 0: // if there are no neighbour ships, then create a new
@@ -116,4 +97,26 @@ function isMiddleCell(ship, cell){
     }
     // if there are both smaller and bigger ids, the cell is a middle cell
     return smallerIdCount > 0 && biggerIdCount > 0
+}
+
+// searching through neighbour cells if they are in a ship, if so, the cell can be added to that
+function collectNeighbourShipCells(cell){
+    let neighbourCells = []
+    // checking if top cell is a hit
+    if(cell.x-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x - 1, cell.y))
+    }
+    // checking if bottom cell is a hit
+    if(cell.x+1 < 10 && grid.cellByXY(cell.x + 1, cell.y).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x + 1, cell.y))
+    }
+    // checking if left cell is a hit
+    if(cell.y-1 >= 0 && grid.cellByXY(cell.x, cell.y - 1).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x, cell.y - 1))
+    }
+    // checking if right cell is a hit
+    if(cell.y+1 < 10 && grid.cellByXY(cell.x, cell.y + 1).state == "hit"){
+        neighbourCells.push(grid.cellByXY(cell.x, cell.y + 1))
+    }
+    return neighbourCells
 }
