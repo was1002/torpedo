@@ -73,15 +73,7 @@ function setMissState(cell, clickedElement){
     lastCellIds[0] = clickedElement.id
 
     // if it passed the checks, see if it encloses a ship that needs to be sunk
-    for(let element of neighbourCells){
-        let ship = searchShipByCell(element)
-        let freeNeighbourCells = getFreeNeighboursOfShip(ship.cells)
-        if(freeNeighbourCells.length == 0){
-            if(fleet.countShipsToSinkPerLength()[ship.length] > 0){
-                sinkShip(ship)
-            }
-        }
-    }
+    sinkEnclosedShips(neighbourCells)
     
     return 0
 }
@@ -106,7 +98,15 @@ function setHitState(cell, clickedElement){
         return
     }
 
+    // see if the hit cell has a free corner neighbour that encloses a ship that needs to be sunk
+    neighbourShipCells = []
+    for(let cornerCell of collectFreeCornerNeighbours(cell)){
+        neighbourShipCells.push(...collectNeighbourShipCells(cornerCell))
+    }
+
     setHitHistory(cell, clickedElement)
+
+    sinkEnclosedShips(neighbourShipCells)
 
     return 0
 }
@@ -176,5 +176,17 @@ function setSunkenHistory(shipCells, clickedElement){
     for(let element of freeNeighbourCells){
         element.state = "miss"
         lastCellIds.push(element.id)
+    }
+}
+
+function sinkEnclosedShips(neighbourCells){
+    for(let element of neighbourCells){
+        let ship = searchShipByCell(element)
+        let freeNeighbourCells = getFreeNeighboursOfShip(ship.cells)
+        if(freeNeighbourCells.length == 0){
+            if(fleet.countShipsToSinkPerLength()[ship.length] > 0){
+                sinkShip(ship)
+            }
+        }
     }
 }
