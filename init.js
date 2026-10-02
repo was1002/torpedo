@@ -25,3 +25,6 @@ let lastCellIds = [0]
 
 //handling clicks on cells
 setupInput()
+
+// calculating initial values
+calculateCellValues(grid.freeCells)

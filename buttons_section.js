@@ -63,7 +63,7 @@ function setUndo(){
         }
     }
 
-    calculateCellValues()
+    calculateCellValues(grid.freeCells)
 }
 
 // "newGame" button onclick function
@@ -73,7 +73,7 @@ function setNewGame(){
         grid.cell(i).state = "free"
     }
     fleet.removeAllShips()
-    calculateCellValues()
+    calculateCellValues(grid.freeCells)
 }
 
 // setting button as "selected"

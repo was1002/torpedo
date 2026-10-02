@@ -39,7 +39,7 @@ async function onClickOnCell(element) {
         }
     }
     // calculating the new cell values
-    calculateCellValues()
+    calculateCellValues(grid.freeCells)
 }
 
 // getting clicked cell object

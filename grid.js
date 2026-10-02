@@ -57,6 +57,7 @@ class Cell{
     #y
     #state
     #id
+    #value
 
     // creating cell
     constructor(cellElement, x, y, state, id) {
@@ -66,6 +67,10 @@ class Cell{
         this.#y = y
         this.#state = state
         this.#id = id
+        this.#value = 0
+        if (state == "free"){
+            cellElement.innerHTML = this.#value
+        }
     }
     // the state of a cell can be free, miss, sunken or hit
     set state(value){
@@ -73,6 +78,11 @@ class Cell{
             if(this.#state == "free" || value == "free" || (value == "sunken" && this.#state == "hit") || (value == "hit" && this.#state == "sunken")){ //to not overwrite occupied cells, but be able to undo them
                 this.#state = value
                 setCellApperance(this.#cellElement, value)
+                if (this.#state == "free"){
+                    this.#cellElement.innerHTML = this.#value
+                } else {
+                    this.#cellElement.innerHTML = ""
+                }
             }
         } else {
             console.error("Value error: \"" + value + "\" is not a valid state (cell: " + this.#x + ", " + this.#y + ")")
@@ -97,6 +107,21 @@ class Cell{
 
     get id(){
         return this.#id
+    }
+
+    get value(){
+        if(this.#state == "free"){
+            return this.#value
+        } else {
+            return 0
+        }
+    }
+
+    set value(value){
+        if(value >= 0){
+            this.#value = value
+            this.#cellElement.innerHTML = value
+        }
     }
 }
 

@@ -1,7 +1,113 @@
 let fleet = new Fleet()
 
-function calculateCellValues(){
+function calculateCellValues(cells){
+    let freeCells = cells.filter((cell) => cell.state == "free")
+    let weights = fleet.countShipsToSinkPerLength()
+    // calculating for every cell
+    for(let cell of freeCells){
+        cell.value = 0
+        // calculating the number of possible placements for every ship length at that cell
+        for(let shipLength = 1; shipLength <= 4; shipLength++){
+            if (weights[shipLength] == 0){
+                continue
+            }
+            let horizontalOptions = countPlacement(cell, shipLength, "horizontal")
+            let verticalOptions = 0
+            if (!(shipLength == 1)){ // if shipLength is 1, vertical and horizontal are the same
+                verticalOptions = countPlacement(cell, shipLength, "vertical")
+            }
+            cell.value += (horizontalOptions + verticalOptions) * weights[shipLength]
+        }
+    }
+}
 
+// horizontal placement options for a specific ship
+function countPlacement(cell, shipLength, direction) {
+    // initialize variables based on direction of placement
+    let cellDir1
+    let cellDir2
+    if (direction == "horizontal"){
+        cellDir1 = cell.x
+        cellDir2 = cell.y
+    } else if (direction == "vertical"){
+        cellDir1 = cell.y
+        cellDir2 = cell.x
+    } else {
+        console.error("Invalid direction value. Valid options: horizontal, vertical")
+        return 0
+    }
+
+    let options = 0;
+    for (let i = 0; i < shipLength; i++) {
+        // collecting the cells that would be occupied by the ship
+        let shipCells = []
+        for (let j = 0; j < shipLength; j++) {
+            let dir1 = cellDir1 + j - i
+            let dir2 = cellDir2
+            if (dir1 < 0 || dir1 >= 10) {
+                break
+            }
+
+            let shipCell
+            if (direction == "horizontal"){
+                shipCell = grid.cellByXY(dir1, dir2)
+            } else if (direction == "vertical"){
+                shipCell = grid.cellByXY(dir2, dir1)
+            }
+            if (shipCell.state === "miss" || shipCell.state === "sunken") {
+                break
+            }
+
+            shipCells.push(shipCell)
+        }
+        // if the ship length isn't maximal, it can't be placed there
+        if (shipCells.length !== shipLength) {
+            continue
+        }
+
+        // getting all neighbour cells of the shipCells and checking if they are invalid
+        let neighbourCells = getNeighboursOfShip(shipCells)
+        let isInvalidCell = false
+        for (let neighbourCell of neighbourCells) {
+            if (neighbourCell.state === "hit" || neighbourCell.state === "sunken") {
+                isInvalidCell = true
+                break
+            }
+        }
+        if (isInvalidCell){
+            continue
+        }
+
+        // checking if the ship would enclose another with invalid length
+        let isInvalidShipLength = false
+        for (let neighbourCell of neighbourCells){
+            // collecting ship cells that touch the bounding box of the ship
+            let neighbourShipCells = collectNeighbourShipCells(neighbourCell)
+            // removing the ships own cells to leave only ship cells from the outside
+            let validNeighbourShipCells = neighbourShipCells.filter((cell) => !neighbourCells.includes(cell))
+            // checking if one of the ships would be enclosed with invalid length
+            for (let vCell in validNeighbourShipCells){
+                // finding the ship
+                vShip = searchShipByCell(vCell)
+                let freeNeighboursOfShip = getFreeNeighboursOfShip(vShip.cells)
+                if (freeNeighboursOfShip.length === 1 && freeNeighboursOfShip[0] == neighbourCell){
+                    isInvalidShipLength = true
+                    break
+                }
+            }
+
+            if (isInvalidShipLength){
+                break
+            }
+        }
+        if (isInvalidShipLength){
+            continue
+        }
+
+        options++
+    }
+
+    return options
 }
 
 // adds a new cell to a neighbour ship, or if there isn't any, creates a new one
@@ -84,6 +190,31 @@ function searchShipByCell(shipCell){
     return fleet.ships.find((ship) => ship.isCellInShip(shipCell))
 }
 
+// collect all of the neighbour and corner neighbour cells of a ship
+function getNeighboursOfShip(shipCells){
+    // calculating the cell coordinate bounds of the neighbours
+    let boundingBox = {
+        Xmin: Math.max(Math.min(...shipCells.map(cell => cell.x)) - 1, 0),
+        Xmax: Math.min(Math.max(...shipCells.map(cell => cell.x)) + 1, 9),
+        Ymin: Math.max(Math.min(...shipCells.map(cell => cell.y)) - 1, 0),
+        Ymax: Math.min(Math.max(...shipCells.map(cell => cell.y)) + 1, 9)
+    }
+    
+    // collecting free cells in bounding box
+    let neighbourCells = []
+    // searches the whole bounding box and adds the cell if it is free
+    for(let i = boundingBox.Xmin; i<=boundingBox.Xmax; i++ ){
+        for(let j = boundingBox.Ymin; j<=boundingBox.Ymax; j++){
+            let neighbourCell = grid.cellByXY(i,j)
+            if (!shipCells.includes(neighbourCell)){
+                neighbourCells.push(neighbourCell)
+            }
+        }
+    }
+    
+    return neighbourCells
+}
+
 // collects all of the neighbour and corner neighbour cells of a ship that are free
 function getFreeNeighboursOfShip(shipCells){
     // calculating the cell coordinate bounds of the neighbours
@@ -100,7 +231,7 @@ function getFreeNeighboursOfShip(shipCells){
     for(let i = boundingBox.Xmin; i<=boundingBox.Xmax; i++ ){
         for(let j = boundingBox.Ymin; j<=boundingBox.Ymax; j++){
             let neighbourCell = grid.cellByXY(i,j)
-            if(neighbourCell.state == "free"){
+            if(neighbourCell.state == "free" && !shipCells.includes(neighbourCell)){
                 freeCells.push(neighbourCell)
             }
         }
