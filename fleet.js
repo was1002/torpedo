@@ -2,11 +2,19 @@ class Fleet {
     #ships
     #nextId
     #shipCount
+    #shipsPerLength
 
     constructor(){
         this.#ships = []
         this.#nextId = 0
         this.#shipCount = 0
+        // number of ships to find per length
+        this.#shipsPerLength = Object.freeze({
+            1: 4,
+            2: 3,
+            3: 2,
+            4: 1
+        })
     }
 
     get ships(){
@@ -15,6 +23,19 @@ class Fleet {
     
     get shipCount(){
         return this.#shipCount
+    }
+
+    get shipsPerLength(){
+        return this.#shipsPerLength
+    }
+
+    // returns the number of ships (all) with a specific length
+    countShipsWithLength(length){
+        if(length < 1 || length > 4){
+            console.error("Error: Invalid ship length. Must be between 1 and 4.")
+            return 0
+        }
+        return this.#shipsPerLength[length]
     }
 
     // creates a new ship to the fleet and returns it
@@ -56,10 +77,126 @@ class Fleet {
         this.removeShip(ship2)
         return ship1
     }
+
+    unmergeShip(ship, lastCell){
+        let unmergedShip = fleet.newShip()
+        let tempCells = [...ship.cells]
+        for(let cell of tempCells){
+            // if the cell id is bigger than the last cell's
+            // add to a new ship and delete from this
+            if(cell.id > lastCell.id){
+                unmergedShip.addCell(cell)
+                ship.removeCell(cell)
+            }
+        }
+    }
     
     // collects all the ships that are found but not sunken
     notSunkenShips(){
         return this.#ships.filter((ship) => !ship.isSunken)
+    }
+
+    sunkenShips(){
+        return this.#ships.filter((ship) => ship.isSunken)
+    }
+
+    sunkenShipsWithFreeNeighbours(){
+        let sunkenShipsWithFreeNeighbours = []
+        for(let ship of fleet.sunkenShips()){
+            let freeNeighbours = getFreeNeighboursOfShip(ship.cells)
+            if(freeNeighbours.length > 0){
+                sunkenShipsWithFreeNeighbours.push(ship)
+            }
+        }
+        return sunkenShipsWithFreeNeighbours
+    }
+    // number of all the ships that are found and sunken, per length
+    countSunkenShipsPerLength(){
+        let sunkenPerLenght = Object({
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0
+        })
+        for(let ship of this.sunkenShips()){
+            sunkenPerLenght[ship.length] += 1
+        }
+        return sunkenPerLenght
+    }
+
+    // number of all the ships that are found but not sunken, per length
+    countNotSunkenShipsPerLength(){
+        let notSunkenShipsPerLength = Object({
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0
+        })
+        for(let ship of this.notSunkenShips()){
+            notSunkenShipsPerLength[ship.length] += 1
+        }
+        return notSunkenShipsPerLength
+    }
+
+    // number of all the ships that has to be sunk (found and not found), per length
+    countShipsToSinkPerLength(){
+        let shipsToSinkPerLength = Object({
+            1: 0,
+            2: 0,
+            3: 0,
+            4: 0
+        })
+        for(let length = 1; length <= 4; length++){
+            shipsToSinkPerLength[length] = this.countShipsWithLength(length) - this.countSunkenShipsPerLength()[length]
+        }
+        return shipsToSinkPerLength
+    }
+
+    maxShipToSinkLength(){
+        let maxLength = 0
+        for(let length = 4; length >= 1; length--){
+            if(this.countShipsToSinkPerLength()[length] > 0){
+                maxLength = length
+                break
+            }
+        }
+        return maxLength
+    }
+
+    countShipsToSinkLongerThan(length){
+        let shipsToSink = 0
+        for(let i=length+1; i<=4; i++){
+            shipsToSink += this.countShipsToSinkPerLength()[i]
+        }
+        return shipsToSink
+    }
+
+    countShipsToSinkMinLength(length){
+        let shipsToSink = 0
+        for(let i=length; i<=4; i++){
+            shipsToSink += this.countShipsToSinkPerLength()[i]
+        }
+        return shipsToSink
+    }
+
+    countNotSunkenShipsLongerThan(length){
+        let count = 0
+        for(let ship of this.notSunkenShips()){
+            if(ship.length > length){
+                count++
+            }
+        }
+        return count
+    }
+
+    countNotSunkenShipsMinLength(length){
+        let count = 0
+        for(let ship of this.notSunkenShips()){
+            if(ship.length >= length){
+                count++
+            }
+        }
+        return count
     }
 }
 

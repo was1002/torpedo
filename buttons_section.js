@@ -47,24 +47,21 @@ function setUndo(){
             // than the last added cell's
             if(isMiddleCell(lastShip,lastCell)){
                 // unmerge the ships
-                let unmergedShip = fleet.newShip()
-                let tempCells = [...lastShip.cells]
-                for(let cell of tempCells){
-                    // if the cell id is bigger than the last cell's
-                    // add to a new ship and delete from this
-                    if(cell.id > lastCell.id){
-                        unmergedShip.addCell(cell)
-                        lastShip.removeCell(cell)
-                    }
-                }
+                fleet.unmergeShip(lastShip, lastCell)
             }
             // remove the last cell from the ship
             lastShip.removeCell(lastCell)
         }
     }
 
-    console.log("Fleet: ")
-    console.log(fleet)
+    // check if there are sunken ships that are not fully enclosed by misses and unsunk them
+    let sunkenShipsWithFreeNeighbours = fleet.sunkenShipsWithFreeNeighbours()
+    for(let ship of sunkenShipsWithFreeNeighbours){
+        ship.isSunken = false
+        for(let cell of ship.cells){
+            cell.state = "hit"
+        }
+    }
 
     calculateCellValues()
 }

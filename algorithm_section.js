@@ -1,9 +1,3 @@
-/* let allowedShipCount = [4,3,2,1] // number of allowed ships with length index+1
-let maxShipLength = allowedShipCount.length // longest allowed shiplength
-
-let undiscoveredShipCount = [4,3,2,1] // number of undiscovered ships with length index+1
-let maxUndiscoveredShipLength = undiscoveredShipCount.length */
-
 let fleet = new Fleet()
 
 function calculateCellValues(){
@@ -12,12 +6,15 @@ function calculateCellValues(){
 
 // adds a new cell to a neighbour ship, or if there isn't any, creates a new one
 // returns the ship, or -1 if there is an error
-function addCellToShip(cell){
+function addCellToShip(cell, state){
     let ship1
     let ship2
     let neighbourCells = []
     let neighbourHitCount = 0
-    
+    let ship1Length = 0
+    let ship2Length = 0
+
+
     neighbourCells = collectNeighbourShipCells(cell)
     neighbourHitCount = neighbourCells.length
     // check how many hit neighbours the cell has
@@ -27,21 +24,54 @@ function addCellToShip(cell){
             break
         case 1: // search the ship that belongs to the neighbour
             ship1 = searchShipByCell(neighbourCells[0])
+            ship1Length = ship1.length
             break
         case 2: // search the two neighbour ships
             ship1 = searchShipByCell(neighbourCells[0])
             ship2 = searchShipByCell(neighbourCells[1])
+            ship1Length = ship1.length
+            ship2Length = ship2.length
             break
         default:
             console.error("Error: There are too many neighbour ships of cell: " + cell.id)
             return -1
     }
-    // check if ship length isn't bigger than allowed
+
+    // ----- CHECKS -----
+
+    // check if ship length won't be bigger than allowed
+    if(fleet.countNotSunkenShipsLongerThan(ship1Length + ship2Length) >= fleet.countShipsToSinkLongerThan(ship1Length + ship2Length)){
+        console.error("Adding the cell would make a ship that is longer than allowed.")
+        return -1
+    }
+
+    // check if adding the cell would enclose a ship with invalid length
+    if(!isEnclosingInvalidShip(cell)){
+        console.error("Adding the cell would enclose a ship with invalid length.")
+        return -1
+    }
+
+    // check if adding the cell would make it an enclosed ship with invalid length
+    let freeNeighbourCells = getFreeNeighboursOfShip([cell, ...ship1.cells, ...ship2?.cells ?? []])
+    if(freeNeighbourCells.length == 0 && ship1Length > 0 &&
+            fleet.countShipsToSinkPerLength()[ship1Length + ship2Length + 1] == 0){
+        console.error("No more ships are allowed with length " + (ship1Length + ship2Length + 1) 
+            + " and the ship would be enclosed by misses.")
+        return -1
+    }
+
+    // if sunken, is it allowed to sink a ship with this length
+    if(state == "sunken" && fleet.countShipsToSinkPerLength()[ship1Length + ship2Length + 1] == 0){
+        console.error("No more ships are allowed to sink with length " + (ship1Length + ship2Length + 1))
+        return -1
+    }
+
+    // ----- END OF CHECKS -----
+
     // add cell to the selected ship
     ship1.addCell(cell)
 
     // merge ships if there are neighbours
-    // check if ship1.length + ship2.length isn't greater than the max allowed length
     if(neighbourHitCount == 2){
         ship1 = fleet.mergeShips(ship1, ship2)
     }
@@ -63,8 +93,7 @@ function getFreeNeighboursOfShip(shipCells){
         Ymin: Math.max(Math.min(...shipCells.map(cell => cell.y)) - 1, 0),
         Ymax: Math.min(Math.max(...shipCells.map(cell => cell.y)) + 1, 9)
     }
-    console.log("Bounding box:")
-    console.log(boundingBox)
+    
     // collecting free cells in bounding box
     let freeCells = []
     // searches the whole bounding box and adds the cell if it is free
@@ -76,8 +105,7 @@ function getFreeNeighboursOfShip(shipCells){
             }
         }
     }
-    console.log("Free cells:")
-    console.log(freeCells)
+    
     return freeCells
 }
 
@@ -119,4 +147,50 @@ function collectNeighbourShipCells(cell){
         neighbourCells.push(grid.cellByXY(cell.x, cell.y + 1))
     }
     return neighbourCells
+}
+
+// checks if adding the cell would enclose a ship with invalid length
+function isEnclosingInvalidShip(cell){
+    // corner neighbour cells of the cell
+    let cornerNeighbours = collectFreeCornerNeighbours(cell)
+    
+    // checking if a free corner neighbour would enclose a ship with invalid length
+    tempShipsToSinkPerLength = fleet.countShipsToSinkPerLength()
+    for(let cornerCell of cornerNeighbours){
+        for(let ship of fleet.notSunkenShips()){
+            // filtering ships that have a cell that is neighbour of the added cell,
+            // because those ships would be merged with the added cell's ship
+            if(ship.cells.some(shipCell => Math.abs(shipCell.x - cell.x) + Math.abs(shipCell.y - cell.y) <= 1)){
+                continue
+            }
+
+            let freeNeighbours = getFreeNeighboursOfShip(ship.cells)
+            if (freeNeighbours.length == 1 && 
+                freeNeighbours[0].id == cornerCell.id){
+                if(tempShipsToSinkPerLength[ship.length] == 0){
+                    return false
+                } else{
+                    tempShipsToSinkPerLength[ship.length] -= 1
+                }
+            }
+        }
+    }
+    return true
+}
+
+function collectFreeCornerNeighbours(cell){
+    let freeCornerNeighbours = []
+    if(cell.x-1 >= 0 && cell.y-1 >= 0 && grid.cellByXY(cell.x - 1, cell.y - 1).state == "free"){
+        freeCornerNeighbours.push(grid.cellByXY(cell.x - 1, cell.y - 1))
+    }
+    if(cell.x-1 >= 0 && cell.y+1 < 10 && grid.cellByXY(cell.x - 1, cell.y + 1).state == "free"){
+        freeCornerNeighbours.push(grid.cellByXY(cell.x - 1, cell.y + 1))
+    }
+    if(cell.x+1 < 10 && cell.y-1 >= 0 && grid.cellByXY(cell.x + 1, cell.y - 1).state == "free"){
+        freeCornerNeighbours.push(grid.cellByXY(cell.x + 1, cell.y - 1))
+    }
+    if(cell.x+1 < 10 && cell.y+1 < 10 && grid.cellByXY(cell.x + 1, cell.y + 1).state == "free"){
+        freeCornerNeighbours.push(grid.cellByXY(cell.x + 1, cell.y + 1))
+    }
+    return freeCornerNeighbours
 }
