@@ -37,9 +37,9 @@ async function onClickOnCell(element) {
             console.log("Fleet: ")
             console.log(fleet)
         }
+        // calculating the new cell values
+        calculateCellValues(grid.freeCells)
     }
-    // calculating the new cell values
-    calculateCellValues(grid.freeCells)
 }
 
 // getting clicked cell object

@@ -21,38 +21,39 @@ function calculateCellValues(cells){
     }
 }
 
-// horizontal placement options for a specific ship
+// placement options for a specific ship in one direction
 function countPlacement(cell, shipLength, direction) {
     // initialize variables based on direction of placement
-    let cellDir1
-    let cellDir2
+    let cellCoord1
+    let cellCoord2
     if (direction == "horizontal"){
-        cellDir1 = cell.x
-        cellDir2 = cell.y
+        cellCoord1 = cell.x
+        cellCoord2 = cell.y
     } else if (direction == "vertical"){
-        cellDir1 = cell.y
-        cellDir2 = cell.x
+        cellCoord1 = cell.y
+        cellCoord2 = cell.x
     } else {
         console.error("Invalid direction value. Valid options: horizontal, vertical")
         return 0
     }
 
     let options = 0;
+    // iterating through all possible placements (shifting along the selected direction) of that specific ship
     for (let i = 0; i < shipLength; i++) {
-        // collecting the cells that would be occupied by the ship
+        // collecting the cells that would be occupied by the ship with i offset
         let shipCells = []
         for (let j = 0; j < shipLength; j++) {
-            let dir1 = cellDir1 + j - i
-            let dir2 = cellDir2
-            if (dir1 < 0 || dir1 >= 10) {
+            let coord1 = cellCoord1 + j - i
+            let coord2 = cellCoord2
+            if (coord1 < 0 || coord1 >= 10) {
                 break
             }
 
             let shipCell
             if (direction == "horizontal"){
-                shipCell = grid.cellByXY(dir1, dir2)
+                shipCell = grid.cellByXY(coord1, coord2)
             } else if (direction == "vertical"){
-                shipCell = grid.cellByXY(dir2, dir1)
+                shipCell = grid.cellByXY(coord2, coord1)
             }
             if (shipCell.state === "miss" || shipCell.state === "sunken") {
                 break
@@ -77,7 +78,7 @@ function countPlacement(cell, shipLength, direction) {
         if (isInvalidCell){
             continue
         }
-
+        
         // checking if the ship would enclose another with invalid length
         let isInvalidShipLength = false
         for (let neighbourCell of neighbourCells){
@@ -86,11 +87,13 @@ function countPlacement(cell, shipLength, direction) {
             // removing the ships own cells to leave only ship cells from the outside
             let validNeighbourShipCells = neighbourShipCells.filter((cell) => !neighbourCells.includes(cell))
             // checking if one of the ships would be enclosed with invalid length
-            for (let vCell in validNeighbourShipCells){
+            for (let vCell of validNeighbourShipCells){
                 // finding the ship
                 vShip = searchShipByCell(vCell)
                 let freeNeighboursOfShip = getFreeNeighboursOfShip(vShip.cells)
-                if (freeNeighboursOfShip.length === 1 && freeNeighboursOfShip[0] == neighbourCell){
+                if (freeNeighboursOfShip.length === 1 &&
+                        freeNeighboursOfShip[0] == neighbourCell &&
+                        fleet.countShipsToSinkPerLength()[vShip.length] == 0){
                     isInvalidShipLength = true
                     break
                 }

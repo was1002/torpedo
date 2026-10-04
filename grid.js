@@ -81,6 +81,7 @@ class Cell{
                 if (this.#state == "free"){
                     this.#cellElement.innerHTML = this.#value
                 } else {
+                    this.#value = 0
                     this.#cellElement.innerHTML = ""
                 }
             }
@@ -118,7 +119,7 @@ class Cell{
     }
 
     set value(value){
-        if(value >= 0){
+        if(value >= 0 && this.#state === "free"){
             this.#value = value
             this.#cellElement.innerHTML = value
         }
