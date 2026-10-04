@@ -2,7 +2,10 @@
 const GRID_SIZE = 10
 const CELL_SIZE = 8
 const CELL_GAP = 0.5
-const CELL_COLOR = "#AAA"
+const CELL_COLOR = "#AAAAAA"
+const CELL_MAXCOLOR = "#479747"
+const CELL_COLOR_NUM = parseInt(CELL_COLOR.replace("#", ""), 16)
+const CELL_MAXCOLOR_NUM = parseInt(CELL_MAXCOLOR.replace("#", ""), 16)
 
 class Grid {
     #cells
@@ -58,6 +61,7 @@ class Cell{
     #state
     #id
     #value
+    #color
 
     // creating cell
     constructor(cellElement, x, y, state, id) {
@@ -122,6 +126,19 @@ class Cell{
         if(value >= 0 && this.#state === "free"){
             this.#value = value
             this.#cellElement.innerHTML = value
+        }
+    }
+
+    get color(){
+        return this.#color
+    }
+    
+    set color(value){
+        if (typeof(value) == "string" && value.match(/^#([0-9a-f]{6})$/i) ){
+            this.#color = value
+            this.#cellElement.style.setProperty("--cell-color", value)
+        } else {
+            console.error("The value " + String(value) + "is not a color code.")
         }
     }
 }

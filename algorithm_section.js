@@ -19,6 +19,7 @@ function calculateCellValues(cells){
             cell.value += (horizontalOptions + verticalOptions) * weights[shipLength]
         }
     }
+    updateColors(freeCells)
 }
 
 // placement options for a specific ship in one direction
@@ -111,6 +112,15 @@ function countPlacement(cell, shipLength, direction) {
     }
 
     return options
+}
+
+function updateColors(cells){
+    let minValue = Math.min(...cells.map((cell)=>cell.value))
+    let maxValue = Math.max(...cells.map((cell)=>cell.value))
+    for(let cell of cells){
+        let colorNum = Math.floor(CELL_COLOR_NUM + (cell.value - minValue)/(maxValue - minValue)*(CELL_MAXCOLOR_NUM - CELL_COLOR_NUM))
+        cell.color = '#' + colorNum.toString(16).padStart(6, '0').toUpperCase()
+    }
 }
 
 // adds a new cell to a neighbour ship, or if there isn't any, creates a new one

@@ -61,6 +61,7 @@ function setMissState(cell, clickedElement){
         if(freeNeighbourCells.length == 0){
             if(tempShipsToSinkPerLength[ship.length] == 0){
                 cell.state = "free"
+                calculateCellValues([cell])
                 console.error("The cell encloses a ship with invalid length " + ship.length)
                 return -1
             } else{
@@ -88,6 +89,7 @@ function setHitState(cell, clickedElement){
         // there was an error
         // setting everything back
         cell.state = "free"
+        calculateCellValues([cell])
         return -1
     }
 
@@ -120,6 +122,7 @@ function setSunkenState(cell, clickedElement){
     if(ship == -1){
         // there was an error, setting everything back
         cell.state = "free"
+        calculateCellValues([cell])
         return -1
     }
     
