@@ -5,7 +5,7 @@ function setupInput() {
 
 // event handler for clicks on cells
 async function onClickOnCell(element) {
-    let clickedElement = element.originalTarget
+    let clickedElement = element.target
     // if clicked on a cell
     if(clickedElement.classList[0] == "cell"){
         let cell = getClickedCell(clickedElement.id)
@@ -13,20 +13,19 @@ async function onClickOnCell(element) {
         if(cell.state == "free" ){
             switch(selectedState){
                 case "miss":
-                    isSuccessful = setMissState(cell, clickedElement)
+                    isSuccessful = setMissState(cell)
                     if(isSuccessful == -1){
                         return
                     }
-                    setMissHistory(cell, clickedElement)
                     break
                 case "hit":
-                    isSuccessful = setHitState(cell, clickedElement)
+                    isSuccessful = setHitState(cell)
                     if(isSuccessful == -1){
                         return
                     }
                     break
                 case "sunken":
-                    isSuccessful = setSunkenState(cell, clickedElement)
+                    isSuccessful = setSunkenState(cell)
                     if(isSuccessful == -1){
                         return
                     }
@@ -38,8 +37,24 @@ async function onClickOnCell(element) {
             console.log("Fleet: ")
             console.log(fleet)
         }
-        // calculating the new cell values
-        calculateCellValues(grid.freeCells)
+        // calculating the new cell values and creating recommendation for next click
+        let recommendation
+        if (fleet.notSunkenShips().length > 0){
+            let shipNeighbours = []
+            for (let tCell of grid.freeCells){
+                if (collectNeighbourShipCells(tCell).length > 0){
+                    shipNeighbours.push(tCell)
+                }
+            }
+            recommendation = createRecommendation(shipNeighbours)
+        }
+        else {
+            recommendation = createRecommendation(grid.freeCells)
+        }
+        
+        if (recommendation !== -1){
+            recommendation.color = "#AA2222"
+        }
     }
 }
 
@@ -49,7 +64,7 @@ function getClickedCell(id){
 }
 
 // setting the state of a cell to "miss" and saving history
-function setMissState(cell, clickedElement){
+function setMissState(cell){
     cell.state = "miss"
 
     // does it enclose a ship
@@ -70,13 +85,14 @@ function setMissState(cell, clickedElement){
             }
         }
     }
+    setMissHistory(cell)
 
     return 0
 }
 
-function setMissHistory(cell, clickedElement){
+function setMissHistory(cell){
     lastCellIds = []
-    lastCellIds[0] = clickedElement.id
+    lastCellIds[0] = cell.id
 
     let neighbourCells = collectNeighbourShipCells(cell)
     // if it passed the checks, see if it encloses a ship that needs to be sunk
@@ -85,9 +101,9 @@ function setMissHistory(cell, clickedElement){
 }
 
 // setting the state of a cell to "hit" and saving history
-function setHitState(cell, clickedElement){
+function setHitState(cell){
     if(cell.value === 0 ){
-        console.error("Can't add a ship to a cell with value 0")
+        console.error("Can't add a hit to a cell with value 0")
         return -1
     }
 
@@ -106,7 +122,7 @@ function setHitState(cell, clickedElement){
     // sink the ship if it can't be longer
     if (fleet.maxShipToSinkLength() == ship.length || getFreeNeighboursOfShip(ship.cells).length == 0){
         sinkShip(ship)
-        setSunkenHistory(ship.cells, clickedElement)
+        setSunkenHistory(ship.cells, cell)
         return
     }
 
@@ -116,7 +132,7 @@ function setHitState(cell, clickedElement){
         neighbourShipCells.push(...collectNeighbourShipCells(cornerCell))
     }
 
-    setHitHistory(cell, clickedElement)
+    setHitHistory(cell)
 
     sinkEnclosedShips(neighbourShipCells)
 
@@ -124,7 +140,7 @@ function setHitState(cell, clickedElement){
 }
 
 // setting the state of a cell and all other cells in the ship to "sunken" and saving history
-function setSunkenState(cell, clickedElement){
+function setSunkenState(cell){
     // setting the cell into a hit first to get the hit look
     cell.state = "hit"
     // adding cell to a ship
@@ -137,7 +153,7 @@ function setSunkenState(cell, clickedElement){
     }
     
     sinkShip(ship)
-    setSunkenHistory(ship.cells, clickedElement)
+    setSunkenHistory(ship.cells, cell)
 
     return 0
 }
@@ -160,10 +176,10 @@ function sinkShip(ship){
     }
 }
 
-function setHitHistory(cell, clickedElement){
+function setHitHistory(cell){
     //adding cell to cell history
     lastCellIds = []
-    lastCellIds[0] = clickedElement.id
+    lastCellIds[0] = cell.id
     // turn corner neighbour cells into a miss, because they can't be in a ship
     freeCornerNeighbours = collectFreeCornerNeighbours(cell)
     for(let element of freeCornerNeighbours){
@@ -172,11 +188,11 @@ function setHitHistory(cell, clickedElement){
     }
 }
 
-function setSunkenHistory(shipCells, clickedElement){
+function setSunkenHistory(shipCells, cell){
     // setting the side and corner neighbour cells to a miss
     // and adding the clicked cell and the misses to lastCellIds
     lastCellIds = []
-    lastCellIds[0] = clickedElement.id
+    lastCellIds[0] = cell.id
 
     // collecting all free neighbour cells of sunken ships
     let sunkenShipsWithFreeNeighbours = fleet.sunkenShipsWithFreeNeighbours()

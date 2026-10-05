@@ -148,6 +148,7 @@ function createRecommendation(cells){
 
     if (maxValueCells.length === 0){
         console.error("Recommendation error: no cell found with max value " + maxValue)
+        return -1
     }
     // only one cell with max value, it is the recommended cell
     else if(maxValueCells.length === 1){ 
@@ -168,29 +169,68 @@ function createRecommendation(cells){
             
             maxCellReductions[i] = missReduction + hitReduction + sunkenReduction
         }
+        // selecting the ones with the most reduction
+        let mostReduction = maxCellReductions[0]
+        let mostReductionIdx = [0]
+        for ( let i = 1; i < maxCellReductions.length; i++){
+            if (maxCellReductions[i] > mostReduction){
+                mostReduction = maxCellReductions[i]
+                mostReductionIdx = [i]
+            }
+            else if (maxCellReductions[i] === mostReduction){
+                mostReductionIdx.push(i)
+            }
+        }
+        // if there is only one with the most reduction
+        if (mostReductionIdx.length === 1){
+            return maxValueCells[0]
+        }
+        // if there is more then one with the most reduction, selecting a random cell
+        else {
+            let recommendedCells = []
+            for ( let i = 0; i < mostReductionIdx.length; i++){
+                recommendedCells.push(maxValueCells[mostReductionIdx[i]])
+            }
+            return recommendedCells[Math.floor(Math.random() * recommendedCells.length)]
+        }
     }
 }
 
 function calculateReduction(cell, currentSum, type){
+    let lastCellIdsCopy = lastCellIds
+    let fleetCopy = fleet
     switch(type){
         case "miss":
+            setMissState(cell)
             break
         case "hit":
+            setHitState(cell)
             break
         case "sunken":
+            setSunkenState(cell)
             break
     }
+    calculateCellValues(grid.freeCells)
+    let newSum = grid.freeCells.reduce((sum,curr)=>sum+curr.value,0)
+    // resetting everything
+    setUndo()
+    lastCellIds = lastCellIdsCopy
+    return currentSum - newSum
 }
 
+// setting the color of the cells based on their values
 function updateColors(cells){
-    let minValue = Math.min(...grid.freeCells.map((cell)=>cell.value))
-    let maxValue = Math.max(...grid.freeCells.map((cell)=>cell.value))
+    // determine value range
+    let minValue = Math.min(...cells.map((cell)=>cell.value))
+    let maxValue = Math.max(...cells.map((cell)=>cell.value))
     
+    // initializing variables for cells that have ship neighbours
     let firstNeighbour = true
     let neighbourCells = []
     let neighbourMinValue = 0
     let neighbourMaxValue = 0
     for(let cell of cells){
+        // if the cell has a ship neighbour it gets a different color
         if (collectNeighbourShipCells(cell).length > 0){
             if(firstNeighbour){
                 firstNeighbour = false
@@ -204,6 +244,8 @@ function updateColors(cells){
             }
             continue
         }
+
+        // all normal cells get their color based on the interpolation from their value between min and max value
         let proportion = maxValue == minValue ? 0 : Math.pow((cell.value - minValue)/(maxValue - minValue), 2)
         let colorNumR = Math.floor(CELL_COLOR_NUM[0] + proportion * (CELL_MAXCOLOR_NUM[0] - CELL_COLOR_NUM[0]))
         let colorNumG = Math.floor(CELL_COLOR_NUM[1] + proportion * (CELL_MAXCOLOR_NUM[1] - CELL_COLOR_NUM[1]))
@@ -213,6 +255,7 @@ function updateColors(cells){
                            colorNumB.toString(16).padStart(2, '0').toUpperCase()
     }
 
+    // ship neighbour cells get their colors
     for(let nCell of neighbourCells){
         let proportion = neighbourMaxValue == neighbourMinValue ? 1 : Math.pow((nCell.value - neighbourMinValue)/(neighbourMaxValue - neighbourMinValue), 2)
         let colorNumR = Math.floor(CELL_COLOR_NUM[0] + proportion * (CELL_HIT_NEIGHBOUR_NUM[0] - CELL_COLOR_NUM[0]))
