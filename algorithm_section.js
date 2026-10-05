@@ -115,11 +115,44 @@ function countPlacement(cell, shipLength, direction) {
 }
 
 function updateColors(cells){
-    let minValue = Math.min(...cells.map((cell)=>cell.value))
-    let maxValue = Math.max(...cells.map((cell)=>cell.value))
+    let minValue = Math.min(...grid.freeCells.map((cell)=>cell.value))
+    let maxValue = Math.max(...grid.freeCells.map((cell)=>cell.value))
+    
+    let firstNeighbour = true
+    let neighbourCells = []
+    let neighbourMinValue = 0
+    let neighbourMaxValue = 0
     for(let cell of cells){
-        let colorNum = Math.floor(CELL_COLOR_NUM + (cell.value - minValue)/(maxValue - minValue)*(CELL_MAXCOLOR_NUM - CELL_COLOR_NUM))
-        cell.color = '#' + colorNum.toString(16).padStart(6, '0').toUpperCase()
+        if (collectNeighbourShipCells(cell).length > 0){
+            if(firstNeighbour){
+                firstNeighbour = false
+                neighbourMinValue = cell.value
+                neighbourMaxValue = cell.value
+                neighbourCells.push(cell)
+            } else {
+                neighbourMinValue = cell.value < neighbourMinValue ? cell.value : neighbourMinValue
+                neighbourMaxValue = cell.value > neighbourMaxValue ? cell.value : neighbourMaxValue
+                neighbourCells.push(cell)
+            }
+            continue
+        }
+        let proportion = maxValue == minValue ? 0 : Math.pow((cell.value - minValue)/(maxValue - minValue), 2)
+        let colorNumR = Math.floor(CELL_COLOR_NUM[0] + proportion * (CELL_MAXCOLOR_NUM[0] - CELL_COLOR_NUM[0]))
+        let colorNumG = Math.floor(CELL_COLOR_NUM[1] + proportion * (CELL_MAXCOLOR_NUM[1] - CELL_COLOR_NUM[1]))
+        let colorNumB = Math.floor(CELL_COLOR_NUM[2] + proportion * (CELL_MAXCOLOR_NUM[2] - CELL_COLOR_NUM[2]))
+        cell.color = '#' + colorNumR.toString(16).padStart(2, '0').toUpperCase() +
+                           colorNumG.toString(16).padStart(2, '0').toUpperCase() +
+                           colorNumB.toString(16).padStart(2, '0').toUpperCase()
+    }
+
+    for(let nCell of neighbourCells){
+        let proportion = neighbourMaxValue == neighbourMinValue ? 1 : Math.pow((nCell.value - neighbourMinValue)/(neighbourMaxValue - neighbourMinValue), 2)
+        let colorNumR = Math.floor(CELL_COLOR_NUM[0] + proportion * (CELL_HIT_NEIGHBOUR_NUM[0] - CELL_COLOR_NUM[0]))
+        let colorNumG = Math.floor(CELL_COLOR_NUM[1] + proportion * (CELL_HIT_NEIGHBOUR_NUM[1] - CELL_COLOR_NUM[1]))
+        let colorNumB = Math.floor(CELL_COLOR_NUM[2] + proportion * (CELL_HIT_NEIGHBOUR_NUM[2] - CELL_COLOR_NUM[2]))
+        nCell.color = '#' + colorNumR.toString(16).padStart(2, '0').toUpperCase() +
+                            colorNumG.toString(16).padStart(2, '0').toUpperCase() +
+                            colorNumB.toString(16).padStart(2, '0').toUpperCase()
     }
 }
 

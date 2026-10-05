@@ -4,8 +4,10 @@ const CELL_SIZE = 8
 const CELL_GAP = 0.5
 const CELL_COLOR = "#AAAAAA"
 const CELL_MAXCOLOR = "#479747"
-const CELL_COLOR_NUM = parseInt(CELL_COLOR.replace("#", ""), 16)
-const CELL_MAXCOLOR_NUM = parseInt(CELL_MAXCOLOR.replace("#", ""), 16)
+const CELL_HIT_NEIGHBOUR = "#378da3"
+const CELL_COLOR_NUM = CELL_COLOR.replace("#","").match(/[0-9a-f]{2}/ig).map(c => parseInt(c, 16))
+const CELL_MAXCOLOR_NUM = CELL_MAXCOLOR.replace("#","").match(/[0-9a-f]{2}/ig).map(c => parseInt(c, 16))
+const CELL_HIT_NEIGHBOUR_NUM = CELL_HIT_NEIGHBOUR.replace("#","").match(/[0-9a-f]{2}/ig).map(c => parseInt(c, 16))
 
 class Grid {
     #cells
@@ -87,6 +89,7 @@ class Cell{
                 } else {
                     this.#value = 0
                     this.#cellElement.innerHTML = ""
+                    this.#cellElement.style.setProperty("--cell-color", CELL_COLOR)
                 }
             }
         } else {
