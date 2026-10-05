@@ -17,6 +17,7 @@ async function onClickOnCell(element) {
                     if(isSuccessful == -1){
                         return
                     }
+                    setMissHistory(cell, clickedElement)
                     break
                 case "hit":
                     isSuccessful = setHitState(cell, clickedElement)
@@ -70,17 +71,26 @@ function setMissState(cell, clickedElement){
         }
     }
 
+    return 0
+}
+
+function setMissHistory(cell, clickedElement){
     lastCellIds = []
     lastCellIds[0] = clickedElement.id
 
+    let neighbourCells = collectNeighbourShipCells(cell)
     // if it passed the checks, see if it encloses a ship that needs to be sunk
     sinkEnclosedShips(neighbourCells)
     
-    return 0
 }
 
 // setting the state of a cell to "hit" and saving history
 function setHitState(cell, clickedElement){
+    if(cell.value === 0 ){
+        console.error("Can't add a ship to a cell with value 0")
+        return -1
+    }
+
     cell.state = "hit"
     // adding cell to a ship
     let ship = addCellToShip(cell, "hit")

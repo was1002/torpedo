@@ -19,6 +19,17 @@ function calculateCellValues(cells){
             cell.value += (horizontalOptions + verticalOptions) * weights[shipLength]
         }
     }
+
+    // looking for cells with value 0, and setting them to miss, because no ship can be there
+    for(let fCell of freeCells){
+        if (fCell.value === 0 ){
+            fCell.state = "miss"
+            lastCellIds.push(fCell.id)
+            sinkEnclosedShips(collectNeighbourShipCells(fCell))
+        }
+    }
+    // updating the array of free cells and setting their colors
+    freeCells = cells.filter((cell) => cell.state == "free")
     updateColors(freeCells)
 }
 
@@ -114,6 +125,63 @@ function countPlacement(cell, shipLength, direction) {
     return options
 }
 
+// recommends a cell to click from the given cells
+function createRecommendation(cells){
+    let maxValue = 0
+    let maxValueCells = []
+    for (let cell of cells){
+        if (cell.value > maxValue){
+            maxValue = cell.value
+        }
+    }
+
+    if (maxValue === 0){
+        console.error("Maximum value is 0, can't add any ships.")
+        return -1
+    }
+
+    for (let cell of cells){
+        if (cell.value == maxValue){
+            maxValueCells.push(cell)
+        }
+    }
+
+    if (maxValueCells.length === 0){
+        console.error("Recommendation error: no cell found with max value " + maxValue)
+    }
+    // only one cell with max value, it is the recommended cell
+    else if(maxValueCells.length === 1){ 
+        return maxValueCells[0]
+    }
+    // multiple cells with max value, selecting between them
+    else {
+        // the current sum of all values on the grid
+        let currentValueSum = grid.freeCells.reduce((sum,curr)=>sum+curr.value,0)
+
+        // calculating for each cell how much it would reduce the sum of the values if clicked
+        let maxCellReductions = Array(maxValueCells.length)
+        for (let i=0; i < maxValueCells.length; i++){
+            let maxCell = maxValueCells[i]
+            let missReduction = calculateReduction(maxCell, currentValueSum, "miss")
+            let hitReduction = calculateReduction(maxCell, currentValueSum, "hit")
+            let sunkenReduction = calculateReduction(maxCell, currentValueSum, "sunken")
+            
+            maxCellReductions[i] = missReduction + hitReduction + sunkenReduction
+        }
+    }
+}
+
+function calculateReduction(cell, currentSum, type){
+    switch(type){
+        case "miss":
+            break
+        case "hit":
+            break
+        case "sunken":
+            break
+    }
+}
+
 function updateColors(cells){
     let minValue = Math.min(...grid.freeCells.map((cell)=>cell.value))
     let maxValue = Math.max(...grid.freeCells.map((cell)=>cell.value))
@@ -165,7 +233,6 @@ function addCellToShip(cell, state){
     let neighbourHitCount = 0
     let ship1Length = 0
     let ship2Length = 0
-
 
     neighbourCells = collectNeighbourShipCells(cell)
     neighbourHitCount = neighbourCells.length
@@ -248,7 +315,7 @@ function getNeighboursOfShip(shipCells){
     
     // collecting free cells in bounding box
     let neighbourCells = []
-    // searches the whole bounding box and adds the cell if it is free
+    // searches the whole bounding box and adds the cell if it is not part of the ship
     for(let i = boundingBox.Xmin; i<=boundingBox.Xmax; i++ ){
         for(let j = boundingBox.Ymin; j<=boundingBox.Ymax; j++){
             let neighbourCell = grid.cellByXY(i,j)
