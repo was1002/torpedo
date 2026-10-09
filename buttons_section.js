@@ -20,7 +20,7 @@ function setSunk(){
 }
 
 // "undo" button onclick function
-function setUndo(){
+function setUndo(turnOffRecommendation = false){
     // get last clicked cell and the ship that it's in
     let lastCell = grid.cell(lastCellIds[0])
     let lastShip = searchShipByCell(lastCell)
@@ -62,8 +62,15 @@ function setUndo(){
             cell.state = "hit"
         }
     }
-
-    calculateCellValues(grid.freeCells)
+    if (turnOffRecommendation === true){
+        calculateCellValues(grid.freeCells)
+    }
+    else {
+        let recommendation = createRecommendation(grid.freeCells)
+        if (recommendation !== -1){
+            recommendation.color = "#AA2222"
+        }
+    }
 }
 
 // "newGame" button onclick function
@@ -74,6 +81,11 @@ function setNewGame(){
     }
     fleet.removeAllShips()
     calculateCellValues(grid.freeCells)
+
+    let recommendation = createRecommendation(grid.freeCells)
+    if (recommendation !== -1){
+        recommendation.color = "#AA2222"
+    }
 }
 
 // setting button as "selected"

@@ -127,6 +127,9 @@ function countPlacement(cell, shipLength, direction) {
 
 // recommends a cell to click from the given cells
 function createRecommendation(cells){
+    // calculation of values so they are up to date
+    calculateCellValues(grid.freeCells)
+
     let maxValue = 0
     let maxValueCells = []
     for (let cell of cells){
@@ -159,16 +162,25 @@ function createRecommendation(cells){
         // the current sum of all values on the grid
         let currentValueSum = grid.freeCells.reduce((sum,curr)=>sum+curr.value,0)
 
+        // calculating a ratio for the reduction weights: remaining hits/all free cells = hit probability
+        let weightRatio = 0
+        let notSunkenShips = fleet.countShipsToSinkPerLength()
+        for (let i = 1; i<=4; i++){
+            weightRatio += notSunkenShips[i] * i
+        }
+        weightRatio /= grid.freeCells.length
+
         // calculating for each cell how much it would reduce the sum of the values if clicked
         let maxCellReductions = Array(maxValueCells.length)
         for (let i=0; i < maxValueCells.length; i++){
             let maxCell = maxValueCells[i]
-            let missReduction = calculateReduction(maxCell, currentValueSum, "miss")
-            let hitReduction = calculateReduction(maxCell, currentValueSum, "hit")
-            let sunkenReduction = calculateReduction(maxCell, currentValueSum, "sunken")
-            
+            let missReduction = calculateReduction(maxCell, currentValueSum, "miss", weightRatio)
+            let hitReduction = calculateReduction(maxCell, currentValueSum, "hit", weightRatio)
+            let sunkenReduction = calculateReduction(maxCell, currentValueSum, "sunken", weightRatio)
+
             maxCellReductions[i] = missReduction + hitReduction + sunkenReduction
         }
+        console.log("Reductions:\n" + maxCellReductions)
         // selecting the ones with the most reduction
         let mostReduction = maxCellReductions[0]
         let mostReductionIdx = [0]
@@ -183,7 +195,7 @@ function createRecommendation(cells){
         }
         // if there is only one with the most reduction
         if (mostReductionIdx.length === 1){
-            return maxValueCells[0]
+            return maxValueCells[mostReductionIdx[0]]
         }
         // if there is more then one with the most reduction, selecting a random cell
         else {
@@ -196,26 +208,45 @@ function createRecommendation(cells){
     }
 }
 
-function calculateReduction(cell, currentSum, type){
+// weighted calculation of the reduction
+function calculateReduction(cell, currentSum, type, weightRatio){
     let lastCellIdsCopy = lastCellIds
-    let fleetCopy = fleet
+    let shipLength = 0
+    let cellValue = cell.value
+    let reductionWeight = 0
+
+    let isSuccessful = -1
+
     switch(type){
         case "miss":
-            setMissState(cell)
+            isSuccessful = setMissState(cell)
+            if(isSuccessful != -1){
+                reductionWeight = 1 - weightRatio
+            }
             break
         case "hit":
-            setHitState(cell)
+            isSuccessful = setHitState(cell)
+            if(isSuccessful != -1){
+                shipLength = searchShipByCell(cell).length
+                reductionWeight = weightRatio * (cellValue - fleet.countShipsToSinkPerLength()[shipLength]) / cellValue
+            }
             break
         case "sunken":
-            setSunkenState(cell)
+            isSuccessful = setSunkenState(cell)
+            if(isSuccessful != -1){
+                shipLength = searchShipByCell(cell).length
+                reductionWeight = weightRatio * (fleet.countShipsToSinkPerLength()[shipLength] + 1) / cellValue
+            }
             break
     }
     calculateCellValues(grid.freeCells)
     let newSum = grid.freeCells.reduce((sum,curr)=>sum+curr.value,0)
+
     // resetting everything
-    setUndo()
+    setUndo(true)
+
     lastCellIds = lastCellIdsCopy
-    return currentSum - newSum
+    return reductionWeight * (currentSum - newSum)
 }
 
 // setting the color of the cells based on their values

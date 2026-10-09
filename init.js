@@ -27,4 +27,7 @@ let lastCellIds = [0]
 setupInput()
 
 // calculating initial values
-calculateCellValues(grid.freeCells)
+let initialRecommendation = createRecommendation(grid.freeCells)
+if ( initialRecommendation !== -1){
+    initialRecommendation.color = "#AA2222"
+}

@@ -123,7 +123,7 @@ function setHitState(cell){
     if (fleet.maxShipToSinkLength() == ship.length || getFreeNeighboursOfShip(ship.cells).length == 0){
         sinkShip(ship)
         setSunkenHistory(ship.cells, cell)
-        return
+        return 0
     }
 
     // see if the hit cell has a free corner neighbour that encloses a ship that needs to be sunk
