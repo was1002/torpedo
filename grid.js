@@ -16,9 +16,10 @@ class Grid {
     //creating grid
     constructor(gridElement) {
         // setting grid appearance
-        gridElement.style.setProperty("--grid-size", GRID_SIZE)
-        gridElement.style.setProperty("--cell-size", `${CELL_SIZE}vmin`)
-        gridElement.style.setProperty("--cell-gap", `${CELL_GAP}vmin`)
+        const boardContainer = gridElement.parentElement
+        boardContainer.style.setProperty("--grid-size", GRID_SIZE)
+        boardContainer.style.setProperty("--cell-size", `${CELL_SIZE}vmin`)
+        boardContainer.style.setProperty("--cell-gap", `${CELL_GAP}vmin`)
         // adding cells to the grid
         this.#cells = createCellElements(gridElement).map((cellElement, index) => {
             return new Cell(

@@ -22,6 +22,50 @@ body {
 
 /* game elements */
 
+#board-container {
+    display: grid;
+    grid-template-columns: max-content auto;
+    grid-template-rows: auto auto;
+    column-gap: calc(1.7*var(--cell-gap));
+}
+
+#letters{
+    display: grid;
+    grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+    gap: var(--cell-gap);
+    padding: var(--cell-gap) var(--cell-gap) 0%;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+#numbers {
+    display: grid;
+    grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+    gap: var(--cell-gap);
+    padding: var(--cell-gap);
+    grid-column: 1;
+    grid-row: 2;
+}
+
+#numbers > div{
+    text-align: right;
+    color: #AAA;
+    align-content: center;
+}
+
+#game-board {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+#letters > div {
+    display: flex;
+    align-items:end;
+    justify-content: center;
+    height: var(--cell-size);
+    color: #AAA;
+}
+
 #game-board {
     display: grid;
     grid-template-columns: repeat(var(--grid-size), var(--cell-size));

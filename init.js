@@ -26,8 +26,10 @@ let lastCellIds = [0]
 //handling clicks on cells
 setupInput()
 
-// calculating initial values
+// creating a recommendation
 let initialRecommendation = createRecommendation(grid.freeCells)
+let lastRecommendation
 if ( initialRecommendation !== -1){
-    initialRecommendation.color = "#AA2222"
+    lastRecommendation = initialRecommendation
+    initialRecommendation.cellElement.style.setProperty("background-image", "url(\"./images/crosshair_middle.png\")")
 }

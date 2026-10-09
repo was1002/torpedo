@@ -66,9 +66,26 @@ function setUndo(turnOffRecommendation = false){
         calculateCellValues(grid.freeCells)
     }
     else {
-        let recommendation = createRecommendation(grid.freeCells)
+        let recommendation
+        if (fleet.notSunkenShips().length > 0){
+            let shipNeighbours = []
+            for (let tCell of grid.freeCells){
+                if (collectNeighbourShipCells(tCell).length > 0){
+                    shipNeighbours.push(tCell)
+                }
+            }
+            recommendation = createRecommendation(shipNeighbours)
+        }
+        else {
+            recommendation = createRecommendation(grid.freeCells)
+        }
+        
         if (recommendation !== -1){
-            recommendation.color = "#AA2222"
+            if (lastRecommendation.state === "free"){
+                lastRecommendation.cellElement.style.setProperty("background-image", "")
+            }
+            recommendation.cellElement.style.setProperty("background-image", "url(\"./images/crosshair_middle.png\")")
+            lastRecommendation = recommendation
         }
     }
 }
@@ -84,7 +101,11 @@ function setNewGame(){
 
     let recommendation = createRecommendation(grid.freeCells)
     if (recommendation !== -1){
-        recommendation.color = "#AA2222"
+        if (lastRecommendation.state === "free"){
+            lastRecommendation.cellElement.style.setProperty("background-image", "")
+        }
+        recommendation.cellElement.style.setProperty("background-image", "url(\"./images/crosshair_middle.png\")")
+        lastRecommendation = recommendation
     }
 }
 

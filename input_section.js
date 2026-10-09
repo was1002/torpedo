@@ -53,7 +53,11 @@ async function onClickOnCell(element) {
         }
         
         if (recommendation !== -1){
-            recommendation.color = "#AA2222"
+            if (lastRecommendation.state === "free"){
+                lastRecommendation.cellElement.style.setProperty("background-image", "")
+            }
+            recommendation.cellElement.style.setProperty("background-image", "url(\"./images/crosshair_middle.png\")")
+            lastRecommendation = recommendation
         }
     }
 }
